@@ -1,18 +1,16 @@
-extends Control
-## Builds the palette from [method GameManager.collect_block_textures].
+# NicNacks
 
-const PALETTE_ITEM_SCRIPT := preload("res://scripts/palette_item.gd")
+This repository contains a Godot 4 playable prototype of the NickNacks first-playable loop.
 
-@onready var _palette_flow: HFlowContainer = $HBox/PaletteScroll/PaletteFlow
+Features implemented in the current prototype:
+- Drag blocks from the palette onto a 12x12 grid.
+- Basic placement validation using corner contact and wall touches.
+- Starting block, undo, and rotate controls.
+- Marble spawn and collection logic.
+- Simple score and track-progression scaffolding.
 
+Open `main.tscn` in Godot 4.7+ to play.
 
-func _ready() -> void:
-	for tex in GameManager.collect_block_textures():
-		var item := TextureRect.new()
-		item.texture = tex
-		item.custom_minimum_size = Vector2(72.0, 72.0)
-		item.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		item.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		item.mouse_filter = Control.MOUSE_FILTER_STOP
-		item.set_script(PALETTE_ITEM_SCRIPT)
-		_palette_flow.add_child(item)
+This prototype intentionally focuses on the first playable rules from the design document rather than the full production systems.
+
+Note: The repository includes the provided block and marble art under `Blocks/` and `Marbles/`, and the scripts load those assets directly from those folders.

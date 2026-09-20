@@ -1,87 +1,68 @@
-extends Node
-## Temporary Phase 1 Marble Manager – spawns 10 random marbles and will handle enclosure/collection.
+extends TextureRect
+class_name PlacedBlock
+## A placed block keeps the piece metadata for rotation and dragging on the board.
 
-const MARBLE_COLORS := ["Black", "Blue", "Green", "Orange", "Purple", "Red", "Yellow"]
-const MARBLE_COUNT := 10
+var piece_color: String = ""
+var piece_cells: Array[Vector2i] = []
+var anchor_cell: Vector2i = Vector2i.ZERO
+var rotation_steps: int = 0
+var grid_ref: Node = null
+var dragging: bool = false
+var press_offset: Vector2 = Vector2.ZERO
 
-# cell → marble node
-var marbles: Dictionary = {}
+func setup_piece(color_name: String, cells: Array[Vector2i], anchor: Vector2i, grid: Node) -> void:
+    piece_color = color_name
+    piece_cells = cells
+    anchor_cell = anchor
+    grid_ref = grid
+    texture = GameManager.get_block_texture_for_color(color_name)
+    custom_minimum_size = Vector2(GameManager.cell_size, GameManager.cell_size)
+    size = Vector2(GameManager.cell_size, GameManager.cell_size)
+    position = GameManager.cell_to_local(anchor)
+    mouse_filter = Control.MOUSE_FILTER_STOP
 
 func _ready() -> void:
-	# Wait one frame so GameManager and the grid are ready
-	call_deferred("spawn_marbles")
+    mouse_filter = Control.MOUSE_FILTER_STOP
+    expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
+func _gui_input(event: InputEvent) -> void:
+    if event is InputEventMouseButton:
+        var mb := event as InputEventMouseButton
+        if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
+            dragging = true
+            press_offset = get_global_mouse_position() - global_position
+            move_to_front()
+            accept_event()
+        elif mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed and dragging:
+            dragging = false
+            var target_cell := GameManager.local_to_grid_cell(global_position)
+            if grid_ref != null and grid_ref.has_method("_can_move_selected_piece_to_cell"):
+                if grid_ref._can_move_selected_piece_to_cell(self, target_cell):
+                    grid_ref._move_selected_piece_to_cell(self, target_cell)
+            accept_event()
+    elif event is InputEventMouseMotion and dragging:
+        global_position = get_global_mouse_position() - press_offset
+        accept_event()
 
-func spawn_marbles() -> void:
-	marbles.clear()
-	
-	var grid = _find_grid_node()
-	if grid == null:
-		push_error("MarbleManager: Could not find the Grid node!")
-		return
-	
-	var attempts := 0
-	while marbles.size() < MARBLE_COUNT and attempts < 200:
-		attempts += 1
-		var x := randi_range(1, GameManager.grid_width - 2)
-		var y := randi_range(1, GameManager.grid_height - 2)
-		var cell := Vector2i(x, y)
-		
-		if marbles.has(cell):
-			continue
-		
-		_spawn_marble_at(cell, grid)
-	
-	print("Spawned %d marbles" % marbles.size())
+func rotate_clockwise() -> void:
+    rotation_steps = (rotation_steps + 1) % 4
+    if grid_ref != null and grid_ref.has_method("rotate_selected_piece"):
+        grid_ref.rotate_selected_piece()
 
+func set_anchor(cell: Vector2i) -> void:
+    anchor_cell = cell
+    position = GameManager.cell_to_local(cell)
 
-func _spawn_marble_at(cell: Vector2i, grid: Control) -> void:
-	var color: String = MARBLE_COLORS.pick_random()
-	var path := "res://assets/marbles/Marble_%s.png" % color  # ← adjust this path if needed
-	
-	var tex := load(path) as Texture2D
-	if tex == null:
-		push_warning("Could not load marble: " + path)
-		return
-	
-	var marble := TextureRect.new()
-	marble.texture = tex
-	marble.custom_minimum_size = Vector2(GameManager.cell_size, GameManager.cell_size)
-	marble.size = Vector2(GameManager.cell_size, GameManager.cell_size)
-	marble.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	marble.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	marble.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	# Position on the grid
-	marble.position = Vector2(cell.x * GameManager.cell_size, cell.y * GameManager.cell_size)
-	
-	grid.add_child(marble)
-	
-	marbles[cell] = {
-		"node": marble,
-		"color": color
-	}
-	
-	print("Marble spawned at ", cell, " (", color, ")")
+func get_anchor() -> Vector2i:
+    return anchor_cell
 
+func get_piece_cells() -> Array[Vector2i]:
+    return piece_cells
 
-func _find_grid_node() -> Control:
-	# Try common names first
-	var root = get_tree().current_scene
-	if root == null:
-		return null
-	
-	var possible_names := ["Grid", "Board", "DropArea", "PlayArea", "GameGrid"]
-	
-	for name in possible_names:
-		var node = root.find_child(name, true, false)
-		if node is Panel or node is Control:
-			return node
-	
-	# Fallback: find any Panel that has the grid script or is large
-	var panels = root.find_children("*", "Panel", true, false)
-	for p in panels:
-		if p.get_script() != null:
-			return p
-	
-	return null
+func get_piece_color() -> String:
+    return piece_color
+
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_PREDELETE:
+        pass
