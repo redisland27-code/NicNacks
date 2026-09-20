@@ -1,0 +1,43 @@
+[gd_scene format=3 uid="uid://bwrwoigiec4vs"]
+
+[ext_resource type="Script" uid="uid://bcefh86yqg662" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://cnt30s0sgli0u" path="res://scripts/grid_playfield.gd" id="2_grid"]
+
+[node name="Main" type="Control" unique_id=1571599536]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="HBox" type="HBoxContainer" parent="." unique_id=686895692]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="PaletteScroll" type="ScrollContainer" parent="HBox" unique_id=1760106040]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+
+[node name="PaletteFlow" type="HFlowContainer" parent="HBox/PaletteScroll" unique_id=1553357345]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+
+[node name="GridPlayfield" type="Panel" parent="HBox" unique_id=2069559205]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("2_grid")
